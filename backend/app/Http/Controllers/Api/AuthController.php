@@ -23,16 +23,21 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        if (!Auth::attempt($champsValides, $request->boolean('remember'))) {
+        $utilisateur = User::where('email', $champsValides['email'])->first();
+
+        if (!$utilisateur || !Hash::check($champsValides['password'], $utilisateur->password)) {
             throw ValidationException::withMessages([
                 'email' => [__('auth.failed')],
             ]);
         }
 
-        $request->session()->regenerate();
-        $utilisateur = Auth::user();
+        Auth::login($utilisateur, $request->boolean('remember'));
 
-        // Création optionnelle d'un token Sanctum pour clients API directs
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
+
+        // Création du token Sanctum pour le client API
         $jeton = $utilisateur->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -67,7 +72,9 @@ class AuthController extends Controller
         ]);
 
         Auth::login($utilisateur);
-        $request->session()->regenerate();
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         $jeton = $utilisateur->createToken('auth_token')->plainTextToken;
 
@@ -107,8 +114,10 @@ class AuthController extends Controller
             Auth::guard('web')->logout();
         }
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return response()->json([
             'succes' => true,
