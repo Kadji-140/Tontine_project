@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Pret;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,11 +11,12 @@ use Illuminate\Support\Facades\Auth;
 class UtilisateurApiController extends Controller
 {
     /**
-     * Liste des utilisateurs avec filtres de statut et rôle.
+     * Liste des utilisateurs de la tontine avec filtres de statut et rôle.
+     * Strictement borné au tenant en session et excluant les Super-Admins plateforme.
      */
     public function index(Request $request): JsonResponse
     {
-        $query = User::orderBy('created_at', 'desc');
+        $query = User::pourTenantActuel()->orderBy('created_at', 'desc');
 
         if ($request->filled('role')) {
             $query->where('role', $request->role);
@@ -39,17 +39,27 @@ class UtilisateurApiController extends Controller
     }
 
     /**
-     * Basculer l'état actif/inactif (activation de compte par le bureau).
+     * Basculer l'état actif/inactif (activation de compte par le bureau de la tontine).
      */
-    public function basculerStatut($id): JsonResponse
+    public function basculerStatut(int $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        // 1. Recherche bornée à la tontine
+        $user = User::pourTenantActuel()->findOrFail($id);
 
+        // 2. Protection contre l'auto-désactivation
         if ($user->id === Auth::id()) {
             return response()->json([
                 'succes' => false,
                 'message' => 'Vous ne pouvez pas modifier le statut de votre propre compte.',
             ], 422);
+        }
+
+        // 3. Sécurité absolue : protection du Super-Admin
+        if ($user->est_super_admin) {
+            return response()->json([
+                'succes' => false,
+                'message' => 'Action strictement interdite sur un compte d’administration de la plateforme SaaS.',
+            ], 403);
         }
 
         $user->is_active = !$user->is_active;
@@ -65,11 +75,11 @@ class UtilisateurApiController extends Controller
     }
 
     /**
-     * Statistiques de prêt pour un utilisateur donné.
+     * Statistiques de prêt pour un utilisateur donné de la tontine.
      */
-    public function statsPrets($id): JsonResponse
+    public function statsPrets(int $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = User::pourTenantActuel()->findOrFail($id);
 
         $stats = [
             'total_prets' => $user->prets()->count(),
@@ -93,9 +103,11 @@ class UtilisateurApiController extends Controller
     /**
      * Détails complets d'un membre avec historique récent.
      */
-    public function details($id): JsonResponse
+    public function details(int $id): JsonResponse
     {
-        $user = User::with(['cycles', 'cotisations.seance'])->findOrFail($id);
+        $user = User::pourTenantActuel()
+            ->with(['cycles', 'cotisations.seance'])
+            ->findOrFail($id);
 
         $stats = [
             'total_prets' => $user->prets()->count(),
@@ -118,17 +130,24 @@ class UtilisateurApiController extends Controller
     }
 
     /**
-     * Suppression d'un utilisateur.
+     * Suppression d'un utilisateur de la tontine.
      */
-    public function destroy($id): JsonResponse
+    public function destroy(int $id): JsonResponse
     {
-        $user = User::findOrFail($id);
+        $user = User::pourTenantActuel()->findOrFail($id);
 
         if ($user->id === Auth::id()) {
             return response()->json([
                 'succes' => false,
                 'message' => 'Impossible de supprimer votre propre compte.',
             ], 422);
+        }
+
+        if ($user->est_super_admin) {
+            return response()->json([
+                'succes' => false,
+                'message' => 'Action strictement interdite sur un compte d’administration de la plateforme SaaS.',
+            ], 403);
         }
 
         $user->delete();

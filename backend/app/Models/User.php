@@ -8,6 +8,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
@@ -79,5 +80,22 @@ class User extends Authenticatable implements MustVerifyEmail
     public function tenant()
     {
         return $this->belongsTo(Tenant::class, 'tenant_id');
+    }
+
+    /**
+     * Scope local pour borner les requêtes aux membres de la tontine active
+     * et exclure rigoureusement les comptes Super-Administrateur plateforme.
+     */
+    public function scopePourTenantActuel(Builder $query): Builder
+    {
+        $tenantId = null;
+        if (app()->bound('tenant_actuel')) {
+            $tenantId = app('tenant_actuel')?->id;
+        } elseif (auth()->check()) {
+            $tenantId = auth()->user()?->tenant_id;
+        }
+
+        return $query->where('tenant_id', $tenantId)
+                     ->where('est_super_admin', false);
     }
 }

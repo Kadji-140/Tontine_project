@@ -9,7 +9,7 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 export const Connexion: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { connexion, estConnecte, estActif, erreur, effacerErreur } = useAuthStore();
+  const { utilisateur, connexion, estConnecte, estActif, erreur, effacerErreur } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,9 +19,15 @@ export const Connexion: React.FC = () => {
   // Si l'utilisateur est déjà connecté, le rediriger
   React.useEffect(() => {
     if (estConnecte) {
-      navigate(estActif ? '/tableau-de-bord' : '/compte-inactif', { replace: true });
+      if (!estActif) {
+        navigate('/compte-inactif', { replace: true });
+      } else if (utilisateur?.est_super_admin) {
+        navigate('/super-admin', { replace: true });
+      } else {
+        navigate('/tableau-de-bord', { replace: true });
+      }
     }
-  }, [estConnecte, estActif, navigate]);
+  }, [estConnecte, estActif, utilisateur, navigate]);
 
   const soumettre = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +38,8 @@ export const Connexion: React.FC = () => {
       const user = await connexion({ email, password, remember });
       if (!user.is_active) {
         navigate('/compte-inactif');
+      } else if (user.est_super_admin) {
+        navigate('/super-admin', { replace: true });
       } else {
         const destination = (location.state as any)?.from?.pathname || '/tableau-de-bord';
         navigate(destination, { replace: true });

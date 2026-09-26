@@ -93,8 +93,8 @@ class SeanceApiController extends Controller
             $beneficiaireAttendu = $seance->cycle->membres()->wherePivot('rang', (int)$rang)->first();
         }
 
-        // Membres actifs pour sélection
-        $membresActifs = User::where('status', 'actif')->orderBy('name')->get();
+        // Membres actifs pour sélection (strictement bornés à la tontine en cours)
+        $membresActifs = User::pourTenantActuel()->where('status', 'actif')->orderBy('name')->get();
 
         // Cotisations déjà versées par membre pour la tontine
         $cotisationsTontineParMembre = $seance->cotisations

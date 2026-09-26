@@ -21,11 +21,12 @@ class RemboursementApiController extends Controller
     {
         $search = $request->query('q', '');
 
-        $membres = User::whereHas('prets', function ($q) {
-            $q->where('statut', 'valide');
-        })
-        ->when($search, fn($q) => $q->where('name', 'ILIKE', "%{$search}%"))
-        ->get();
+        $membres = User::pourTenantActuel()
+            ->whereHas('prets', function ($q) {
+                $q->where('statut', 'valide');
+            })
+            ->when($search, fn($q) => $q->where('name', 'ILIKE', "%{$search}%"))
+            ->get();
 
         $resultats = [];
         foreach ($membres as $membre) {

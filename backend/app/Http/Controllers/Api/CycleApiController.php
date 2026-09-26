@@ -149,7 +149,8 @@ class CycleApiController extends Controller
         $cycle = Cycle::with('membres')->findOrFail($id);
         $membres = $cycle->membres;
 
-        $usersDisponibles = User::where('status', 'actif')
+        $usersDisponibles = User::pourTenantActuel()
+            ->where('status', 'actif')
             ->whereNotIn('id', $membres->pluck('id'))
             ->orderBy('name')
             ->get();
@@ -185,10 +186,12 @@ class CycleApiController extends Controller
         $cycle = Cycle::findOrFail($id);
 
         $request->validate([
-            'user_id' => ['required', 'exists:users,id'],
+            'user_id' => ['required', 'integer'],
         ]);
 
-        if ($cycle->membres()->where('user_id', $request->user_id)->exists()) {
+        $user = User::pourTenantActuel()->findOrFail($request->user_id);
+
+        if ($cycle->membres()->where('user_id', $user->id)->exists()) {
             return response()->json([
                 'succes' => false,
                 'message' => 'Cet utilisateur fait déjà partie du cycle.',
