@@ -146,9 +146,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
             Route::put('/seances/{seance}/rejeter-preuve', [SeanceController::class, 'rejeterPreuve'])->name('seances.rejeter_preuve');
         });
 
-    Route::post('cotisations', [CotisationController::class, 'store'])->name('cotisations.store');
-    Route::delete('cotisations/{cotisation}', [CotisationController::class, 'destroy'])->name('cotisations.destroy');
-
     // Route pour générer le PDF d'une séance spécifique
     Route::get('/seances/{seance}/rapport', [SeanceController::class, 'downloadReport'])->name('seances.rapport');
 });

@@ -74,7 +74,9 @@ class HomeController extends Controller
 
             // 1. Mon épargne (tontine seulement)
             $monEpargne = Cotisation::where('user_id', $user->id)
-                ->where('cycle_id', $cycleActif->id ?? null)
+                ->when($cycleActif, function ($query, $cycle) {
+                    $query->whereHas('seance', fn($q) => $q->where('cycle_id', $cycle->id));
+                })
                 ->where('type', 'tontine')
                 ->sum('montant');
 
@@ -93,14 +95,16 @@ class HomeController extends Controller
             // 4. Mes dettes TOTALES
             $mesDettes = $restantDu;
 
-            // 5. Mes sanctions (amendes, retards)
+            // 5. Mes sanctions (amendes, retards non réglées)
             $mesSanctions = Sanction::where('user_id', $user->id)
-                ->where('statut', 'non_payee')
+                ->where('est_reglee', false)
                 ->sum('montant');
 
-            // 6. Total cotisations (tontine + secours)
+            // 6. Total cotisations (toutes les cotisations du cycle)
             $totalCotisations = Cotisation::where('user_id', $user->id)
-                ->where('cycle_id', $cycleActif->id ?? null)
+                ->when($cycleActif, function ($query, $cycle) {
+                    $query->whereHas('seance', fn($q) => $q->where('cycle_id', $cycle->id));
+                })
                 ->sum('montant');
 
             return view('dashboard', compact(

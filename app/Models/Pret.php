@@ -48,12 +48,19 @@ class Pret extends Model
     }
 
     /**
+     * Calcule le montant total à rembourser (Capital + Intérêts)
+     */
+    public function getTotalARembourserAttribute()
+    {
+        return $this->montant_demande + $this->interet_total;
+    }
+
+    /**
      * Calcule le reste à payer (Capital + Intérêts - Déjà payé)
      */
     public function getResteAPayerAttribute()
     {
-        $totalDette = $this->montant_demande + $this->interet_total;
-        return $totalDette - $this->montant_rembourse;
+        return $this->total_a_rembourser - $this->montant_rembourse;
     }
 
 }

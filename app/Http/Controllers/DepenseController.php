@@ -127,14 +127,19 @@ class DepenseController extends Controller
         return DB::transaction(function () use ($depense) {
             $seance = $depense->seance;
 
-            // 1. Remettre l'argent dans la caisse (Annulation de la dépense)
-            $seance->total_encaisse += $depense->montant;
-            $seance->save();
+            // 1. Remettre l'argent dans la caisse UNIQUEMENT si la dépense avait été validée (et donc débitée)
+            if ($depense->statut === 'validee') {
+                $seance->total_encaisse += $depense->montant;
+                $seance->save();
+                $message = 'Dépense annulée, montant réintégré à la caisse.';
+            } else {
+                $message = 'Dépense en attente supprimée.';
+            }
 
             // 2. Supprimer la ligne
             $depense->delete();
 
-            return back()->with('success', 'Dépense annulée, montant réintégré à la caisse.');
+            return back()->with('success', $message);
         });
     }
 }

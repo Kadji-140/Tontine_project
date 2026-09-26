@@ -145,33 +145,18 @@ class PretController extends Controller
         // 4. CALCULER L'INTERET
         $interetTotal = $request->montant_demande * ($tauxInteret / 100);
 
-        // 1. Règle des 3 Mois
-        $dateLimite3Mois = now()->addMonths(3)->startOfDay();
+        // 5. CALCULER LA DATE MAXIMUM AUTORISÉE (3 Mois maximum ET avant la fin du cycle)
         $dateDemandee = \Carbon\Carbon::parse($request->date_echeance)->startOfDay();
-
-        if ($dateDemandee->isAfter($dateLimite3Mois)) {
-            return back()->with('error', 'Refusé : La durée du prêt ne peut pas dépasser 3 mois.');
-        }
-
-        // 2. Règle de Fin de Cycle
+        $dateLimite3Mois = now()->addMonths(3)->startOfDay();
         $cycle = $seance->cycle;
-        // On s'assure que la date de fin est bien une instance Carbon (si ce n'est pas fait dans le modèle Cycle)
-        $finCycle = \Carbon\Carbon::parse($cycle->date_fin)->startOfDay();
-
-        if ($dateDemandee->isAfter($finCycle)) {
-            return back()->with('error', "Refusé : Vous devez rembourser avant la fin du cycle (" . $finCycle->format('d/m/Y') . ").");
-        }
-        // 4. CALCULER LA DATE MAXIMUM AUTORISÉE
-        $dateDemandee = \Carbon\Carbon::parse($request->date_echeance)->startOfDay();
-        $dateLimite3Mois = now()->addMonths(3)->startOfDay();
         $finCycle = \Carbon\Carbon::parse($cycle->date_fin)->startOfDay();
 
         // Déterminer la date maximum possible
         $dateMaximum = $dateLimite3Mois->min($finCycle);
 
-        // Vérifier si la date demandée dépasse le maximum
+        // Vérifier si la date demandée dépasse le maximum autorisé
         if ($dateDemandee->greaterThan($dateMaximum)) {
-            // Créer le prêt quand même mais avec la date ajustée
+            // Créer le prêt avec la date ajustée au maximum possible
             $pret = Pret::create([
                 'user_id' => $userId,
                 'seance_id' => $request->seance_id,
@@ -192,15 +177,17 @@ class PretController extends Controller
             ]);
 
             return redirect()->route('prets.index')
-                ->with('warning', 'Demande enregistrée avec date ajustée. Le membre doit confirmer la nouvelle date.');
+                ->with('warning', 'Demande enregistrée avec date ajustée à ' . $dateMaximum->format('d/m/Y') . '. Le membre doit confirmer la nouvelle date.');
         } else {
-            // Date dans les limites, création normale
+            // Date dans les limites, création normale avec accord tacite du membre
             Pret::create([
                 'user_id' => $userId,
                 'seance_id' => $request->seance_id,
                 'montant_demande' => $request->montant_demande,
                 'interet_total' => $interetTotal,
                 'date_echeance' => $request->date_echeance,
+                'est_accepte_par_membre' => true,
+                'date_echeance_modifiee' => false,
                 'statut' => 'en_attente',
             ]);
 
@@ -314,7 +301,7 @@ class PretController extends Controller
                 'interet_total' => $interetTotal,
                 'date_echeance_modifiee' => true,
                 'est_accepte_par_membre' => false,
-                'date_modification_proposee' => null, // On n'utilise pas ce champ pour Option A
+                'date_modification_proposee' => $request->date_echeance,
             ]);
 
             // Débogage : vérifier la mise à jour
@@ -414,9 +401,9 @@ class PretController extends Controller
 
         // Si une modification de date est en attente
         if ($pret->date_echeance_modifiee) {
-            // Mettre à jour la date avec celle qui a été proposée
+            // Mettre à jour la date avec celle qui a été proposée (ou conserver l'actuelle en fallback)
             $pret->update([
-                'date_echeance' => $pret->date_modification_proposee,
+                'date_echeance' => $pret->date_modification_proposee ?? $pret->date_echeance,
                 'est_accepte_par_membre' => true,
                 'date_echeance_modifiee' => false,
                 'date_modification_proposee' => null
