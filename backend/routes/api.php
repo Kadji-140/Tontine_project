@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\RemboursementApiController;
 use App\Http\Controllers\Api\SanctionApiController;
 use App\Http\Controllers\Api\SeanceApiController;
 use App\Http\Controllers\Api\UtilisateurApiController;
+use App\Http\Controllers\Api\SuperAdminController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -133,5 +134,19 @@ Route::middleware(['auth:sanctum'])->group(function () {
         Route::get('/utilisateurs/{id}/stats-prets', [UtilisateurApiController::class, 'statsPrets'])->name('api.users.stats');
         Route::get('/utilisateurs/{id}/details', [UtilisateurApiController::class, 'details'])->name('api.users.details');
         Route::delete('/utilisateurs/{id}', [UtilisateurApiController::class, 'destroy'])->name('api.users.destroy');
+    });
+
+    // =========================================================================
+    // 4. MODULES SUPER-ADMINISTRATEUR (SUPERVISION SAAS PLATEFORME)
+    // =========================================================================
+    Route::middleware(['role.super_admin'])->prefix('super-admin')->group(function () {
+        Route::get('/statistiques', [SuperAdminController::class, 'statistiquesGlobales'])->name('api.superadmin.stats');
+        Route::get('/tenants', [SuperAdminController::class, 'listeTenants'])->name('api.superadmin.tenants.index');
+        Route::post('/tenants', [SuperAdminController::class, 'creerTenant'])->name('api.superadmin.tenants.store');
+        Route::get('/tenants/{id}', [SuperAdminController::class, 'detailsTenant'])->name('api.superadmin.tenants.show');
+        Route::patch('/tenants/{id}/statut', [SuperAdminController::class, 'basculerStatutTenant'])->name('api.superadmin.tenants.statut');
+        Route::get('/utilisateurs', [SuperAdminController::class, 'listeUtilisateurs'])->name('api.superadmin.users.index');
+        Route::post('/utilisateurs/{id}/promouvoir', [SuperAdminController::class, 'promouvoirSuperAdmin'])->name('api.superadmin.users.promote');
+        Route::patch('/utilisateurs/{id}', [SuperAdminController::class, 'modifierUtilisateur'])->name('api.superadmin.users.update');
     });
 });

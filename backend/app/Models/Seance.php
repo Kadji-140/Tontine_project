@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 use App\Traits\AppartientAuTenant;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Seance extends Model
 {
-    use HasFactory, AppartientAuTenant;
+    use HasFactory, AppartientAuTenant, SoftDeletes;
 
     protected $fillable = [
         'tenant_id',

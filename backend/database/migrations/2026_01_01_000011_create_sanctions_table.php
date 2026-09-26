@@ -13,16 +13,16 @@ return new class extends Migration
     {
         Schema::create('sanctions', function (Blueprint $table) {
             $table->id();
-
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('seance_id')->nullable()->constrained('seances');
-
-            $table->decimal('montant', 10, 2);
-            $table->string('motif'); // Ex: "Retard", "Absence", "Bruit"
-
-            $table->boolean('est_reglee')->default(false); // Est-ce qu'il a payé l'amende ?
-
+            $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('seance_id')->nullable()->constrained('seances')->nullOnDelete();
+            $table->decimal('montant', 12, 2);
+            $table->string('motif');
+            $table->boolean('est_reglee')->default(false);
             $table->timestamps();
+
+            $table->index(['tenant_id', 'user_id']);
+            $table->index(['tenant_id', 'est_reglee']);
         });
     }
 

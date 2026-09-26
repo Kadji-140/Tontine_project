@@ -4,17 +4,19 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\AppartientAuTenant;
 
 class Annonce extends Model
 {
-    use HasFactory;
+    use HasFactory, AppartientAuTenant;
 
-        protected $fillable= [
-            'titre',
-            'message',
-            'user_id',
-            'target_role', // null = public, 'admin' = admin only, etc.
-        ];
+    protected $fillable = [
+        'tenant_id',
+        'titre',
+        'message',
+        'user_id',
+        'target_role', // null = public, 'admin' = admin only, etc.
+    ];
 
     // Relation avec l'auteur de l'annonce
     public function author()
@@ -34,7 +36,7 @@ class Annonce extends Model
         return $this->readers();
     }
 
-// Petite fonction utilitaire pour savoir si l'user connecté a lu
+    // Petite fonction utilitaire pour savoir si l'user connecté a lu
     public function isReadBy($user)
     {
         return $this->readers->contains($user->id);

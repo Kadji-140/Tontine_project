@@ -13,9 +13,12 @@ return new class extends Migration
     {
         Schema::create('annonce_user', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('annonce_id')->constrained()->onDelete('cascade');
-            $table->foreignId('user_id')->constrained()->onDelete('cascade');
-            $table->timestamp('read_at')->useCurrent(); // Dès qu'on crée la ligne, c'est que c'est lu
+            $table->foreignId('annonce_id')->constrained('annonces')->cascadeOnDelete();
+            $table->foreignId('user_id')->constrained('users')->cascadeOnDelete();
+            $table->timestamp('read_at')->nullable();
+            $table->timestamps();
+
+            $table->unique(['annonce_id', 'user_id']);
         });
     }
 

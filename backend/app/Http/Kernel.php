@@ -72,5 +72,6 @@ class Kernel extends HttpKernel
         'role.bureau' => \App\Http\Middleware\VerifierRoleBureau::class,
         'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
         'tenant' => \App\Http\Middleware\IdentifierTenant::class,
+        'role.super_admin' => \App\Http\Middleware\VerifierSuperAdmin::class,
     ];
 }

@@ -1,11 +1,31 @@
 export type RoleUtilisateur = 'admin' | 'tresorier' | 'membre';
 
+export interface Tenant {
+  id: number;
+  nom: string;
+  slug: string;
+  statut: 'actif' | 'suspendu';
+  devise: string;
+  description?: string | null;
+  configuration?: Record<string, any>;
+  utilisateurs_count?: number;
+  cycles_count?: number;
+  cycle_actif?: Cycle | null;
+  admin_principal?: Utilisateur | null;
+  total_epargne?: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Utilisateur {
   id: number;
+  tenant_id?: number | null;
+  tenant?: Tenant | null;
   name: string;
   email: string;
   phone: string;
   role: RoleUtilisateur;
+  est_super_admin?: boolean;
   status: 'actif' | 'suspendu';
   is_active: boolean;
   avatar?: string | null;

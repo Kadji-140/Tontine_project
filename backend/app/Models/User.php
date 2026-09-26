@@ -24,8 +24,9 @@ class User extends Authenticatable implements MustVerifyEmail
         'email',
         'phone',
         'password',
-        'role',     // admin, tresorier, membre
-        'status',   // actif, suspendu
+        'role',            // admin, tresorier, membre
+        'est_super_admin', // Super-Admin SaaS Plateforme
+        'status',          // actif, suspendu
         'avatar',
         'profession',
         'adresse',
@@ -43,6 +44,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
         'is_active' => 'boolean',
+        'est_super_admin' => 'boolean',
     ];
 
     // --- RELATIONS (C'est ici la magie) ---

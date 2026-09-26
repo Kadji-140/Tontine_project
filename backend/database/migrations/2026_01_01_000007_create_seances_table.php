@@ -13,19 +13,18 @@ return new class extends Migration
     {
         Schema::create('seances', function (Blueprint $table) {
             $table->id();
-
-            // Lien avec le cycle
-            $table->foreignId('cycle_id')->constrained('cycles')->onDelete('cascade');
-
+            $table->foreignId('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignId('cycle_id')->constrained('cycles')->cascadeOnDelete();
             $table->date('date_seance');
-
-            // Statut de la séance (ouverte pour saisie, fermée quand finie)
-            $table->enum('statut', ['ouverte', 'fermee'])->default('ouverte');
-
-            // Total théorique calculé à la fermeture (cache)
+            $table->string('statut')->default('ouverte'); // ouverte, fermee
             $table->decimal('total_encaisse', 12, 2)->default(0);
-
+            $table->string('preuve_versement')->nullable();
+            $table->string('etat_versement')->default('non_verse'); // non_verse, en_attente, valide, rejete
+            $table->softDeletes();
             $table->timestamps();
+
+            $table->index(['tenant_id', 'cycle_id']);
+            $table->index(['tenant_id', 'statut']);
         });
     }
 

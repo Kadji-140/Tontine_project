@@ -4,12 +4,15 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Traits\AppartientAuTenant;
 
 class Cotisation extends Model
 {
-    use HasFactory;
+    use HasFactory, AppartientAuTenant, SoftDeletes;
 
     protected $fillable = [
+        'tenant_id',
         'user_id',
         'seance_id',
         'montant',
@@ -22,11 +25,13 @@ class Cotisation extends Model
     {
         return $this->belongsTo(User::class);
     }
-// Relation pour savoir QUI a saisi l'opération
+
+    // Relation pour savoir QUI a saisi l'opération
     public function auteur()
     {
         return $this->belongsTo(User::class, 'enregistre_par');
     }
+
     // La cotisation a été faite lors d'une Séance
     public function seance()
     {

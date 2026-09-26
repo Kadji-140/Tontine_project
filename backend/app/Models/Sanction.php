@@ -4,12 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\AppartientAuTenant;
 
 class Sanction extends Model
 {
-    use HasFactory;
+    use HasFactory, AppartientAuTenant;
 
     protected $fillable = [
+        'tenant_id',
         'user_id',
         'seance_id',
         'montant',

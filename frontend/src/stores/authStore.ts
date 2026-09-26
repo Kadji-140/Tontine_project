@@ -7,6 +7,7 @@ interface EtatAuth {
   estConnecte: boolean;
   estActif: boolean;
   estBureau: boolean;
+  estSuperAdmin: boolean;
   estChargement: boolean;
   sessionVerifiee: boolean;
   erreur: string | null;
@@ -25,6 +26,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
   estConnecte: false,
   estActif: false,
   estBureau: false,
+  estSuperAdmin: false,
   estChargement: false,
   sessionVerifiee: false,
   erreur: null,
@@ -33,7 +35,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
     if (get().sessionVerifiee) return;
     set({ estChargement: true, erreur: null });
     try {
-      const reponse = await api.get<{ succes: boolean; utilisateur: Utilisateur; est_actif: boolean; est_bureau: boolean }>('/utilisateur');
+      const reponse = await api.get<{ succes: boolean; utilisateur: Utilisateur; est_actif: boolean; est_bureau: boolean; est_super_admin: boolean }>('/utilisateur');
       if (reponse.data.succes && reponse.data.utilisateur) {
         const u = reponse.data.utilisateur;
         set({
@@ -41,6 +43,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
           estConnecte: true,
           estActif: Boolean(u.is_active),
           estBureau: ['admin', 'tresorier'].includes(u.role),
+          estSuperAdmin: Boolean(u.est_super_admin),
           estChargement: false,
           sessionVerifiee: true,
         });
@@ -54,6 +57,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
       estConnecte: false,
       estActif: false,
       estBureau: false,
+      estSuperAdmin: false,
       estChargement: false,
       sessionVerifiee: true,
     });
@@ -81,6 +85,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
         estConnecte: true,
         estActif: Boolean(u.is_active),
         estBureau: ['admin', 'tresorier'].includes(u.role),
+        estSuperAdmin: Boolean(u.est_super_admin),
         estChargement: false,
         sessionVerifiee: true,
       });
@@ -115,6 +120,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
         estConnecte: true,
         estActif: Boolean(u.is_active),
         estBureau: ['admin', 'tresorier'].includes(u.role),
+        estSuperAdmin: false,
         estChargement: false,
         sessionVerifiee: true,
       });
@@ -139,6 +145,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
         estConnecte: false,
         estActif: false,
         estBureau: false,
+        estSuperAdmin: false,
         estChargement: false,
         sessionVerifiee: true,
       });
@@ -150,8 +157,8 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
       utilisateur,
       estActif: Boolean(utilisateur.is_active),
       estBureau: ['admin', 'tresorier'].includes(utilisateur.role),
+      estSuperAdmin: Boolean(utilisateur.est_super_admin),
     });
   },
-
   effacerErreur: () => set({ erreur: null }),
 }));

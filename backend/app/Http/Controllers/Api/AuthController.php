@@ -43,9 +43,11 @@ class AuthController extends Controller
         return response()->json([
             'succes' => true,
             'message' => 'Connexion réussie.',
-            'utilisateur' => $utilisateur,
+            'utilisateur' => $utilisateur->load('tenant'),
             'jeton' => $jeton,
             'est_actif' => (bool)$utilisateur->is_active,
+            'est_bureau' => in_array($utilisateur->role, ['admin', 'tresorier']),
+            'est_super_admin' => (bool)$utilisateur->est_super_admin,
         ]);
     }
 
@@ -61,14 +63,21 @@ class AuthController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
+        $tenantId = null;
+        if (app()->bound('tenant_actuel')) {
+            $tenantId = app('tenant_actuel')?->id;
+        }
+
         $utilisateur = User::create([
+            'tenant_id' => $tenantId,
             'name' => $champsValides['name'],
             'email' => $champsValides['email'],
             'phone' => $champsValides['phone'],
             'password' => Hash::make($champsValides['password']),
             'role' => 'membre',
+            'est_super_admin' => false,
             'status' => 'actif',
-            'is_active' => false, // Doit être validé par un administrateur ou trésorier
+            'is_active' => false, // Doit être validé par un administrateur du tenant
         ]);
 
         Auth::login($utilisateur);
@@ -81,9 +90,11 @@ class AuthController extends Controller
         return response()->json([
             'succes' => true,
             'message' => "Inscription effectuée avec succès. Votre compte est en attente d'activation par le bureau.",
-            'utilisateur' => $utilisateur,
+            'utilisateur' => $utilisateur->load('tenant'),
             'jeton' => $jeton,
             'est_actif' => false,
+            'est_bureau' => false,
+            'est_super_admin' => false,
         ], 201);
     }
 
@@ -92,13 +103,14 @@ class AuthController extends Controller
      */
     public function utilisateurActuel(Request $request): JsonResponse
     {
-        $utilisateur = $request->user();
+        $utilisateur = $request->user()->load('tenant');
 
         return response()->json([
             'succes' => true,
             'utilisateur' => $utilisateur,
             'est_actif' => (bool)$utilisateur->is_active,
             'est_bureau' => in_array($utilisateur->role, ['admin', 'tresorier']),
+            'est_super_admin' => (bool)$utilisateur->est_super_admin,
         ]);
     }
 

@@ -4,20 +4,22 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Traits\AppartientAuTenant;
 
 class PaiementLot extends Model
 {
-    use HasFactory;
+    use HasFactory, AppartientAuTenant;
 
     protected $table = 'paiements_lots';
 
     protected $fillable = [
+        'tenant_id',
         'cycle_id',
         'user_id',
         'seance_id',
         'montant',
         'date_paiement',
-        'statut' // en_attente, confirme, rejete
+        'statut', // en_attente, confirme, rejete
     ];
 
     public function cycle()

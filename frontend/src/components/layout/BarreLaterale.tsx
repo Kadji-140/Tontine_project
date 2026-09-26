@@ -15,6 +15,9 @@ import {
   LogOut,
   Wallet,
   Shield,
+  Building2,
+  Globe,
+  Crown,
   X
 } from 'lucide-react';
 
@@ -27,7 +30,13 @@ export const BarreLaterale: React.FC<PropsBarreLaterale> = ({
   estOuverteMobile = false,
   surFermerMobile,
 }) => {
-  const { utilisateur, estBureau, deconnexion } = useAuthStore();
+  const { utilisateur, estBureau, estSuperAdmin, deconnexion } = useAuthStore();
+
+  const liensSuperAdmin = [
+    { to: '/super-admin', label: 'Vue Globale SaaS', icone: <Globe className="w-5 h-5" /> },
+    { to: '/super-admin/tenants', label: 'Gestion des Tontines', icone: <Building2 className="w-5 h-5" /> },
+    { to: '/super-admin/utilisateurs', label: 'Tous les Utilisateurs', icone: <Users className="w-5 h-5" /> },
+  ];
 
   const liensMembres = [
     { to: '/tableau-de-bord', label: 'Tableau de bord', icone: <LayoutDashboard className="w-5 h-5" /> },
@@ -95,8 +104,17 @@ export const BarreLaterale: React.FC<PropsBarreLaterale> = ({
                 {utilisateur?.name}
               </p>
               <div className="flex items-center gap-1 text-[11px] font-medium text-slate-500 dark:text-slate-400 capitalize">
-                {estBureau && <Shield className="w-3 h-3 text-primaire-500" />}
-                <span>{utilisateur?.role}</span>
+                {estSuperAdmin ? (
+                  <>
+                    <Crown className="w-3.5 h-3.5 text-amber-500" />
+                    <span className="font-bold text-amber-600 dark:text-amber-400">Super-Admin SaaS</span>
+                  </>
+                ) : (
+                  <>
+                    {estBureau && <Shield className="w-3 h-3 text-primaire-500" />}
+                    <span>{utilisateur?.role}</span>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -104,6 +122,36 @@ export const BarreLaterale: React.FC<PropsBarreLaterale> = ({
 
         {/* Liens de navigation */}
         <nav className="flex-1 px-4 space-y-6 overflow-y-auto">
+          {/* Section Super-Admin (Plateforme SaaS) */}
+          {estSuperAdmin && (
+            <div>
+              <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                <Crown className="w-3 h-3" />
+                Supervision Plateforme
+              </p>
+              <div className="space-y-1">
+                {liensSuperAdmin.map((lien) => (
+                  <NavLink
+                    key={lien.to}
+                    to={lien.to}
+                    onClick={surFermerMobile}
+                    className={({ isActive }) =>
+                      cn(
+                        'flex items-center gap-3 px-3.5 py-2.5 text-sm font-semibold rounded-xl transition-all',
+                        isActive
+                          ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 shadow-sm border border-amber-200 dark:border-amber-900/60'
+                          : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100/80 dark:hover:bg-sombre-survol hover:text-slate-900 dark:hover:text-white'
+                      )
+                    }
+                  >
+                    {lien.icone}
+                    <span>{lien.label}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <p className="px-3 mb-2 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
               Espace Membre
