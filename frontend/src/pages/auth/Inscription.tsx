@@ -8,7 +8,8 @@ import { User, Mail, Phone, Lock, UserPlus } from 'lucide-react';
 
 export const Inscription: React.FC = () => {
   const navigate = useNavigate();
-  const { inscription, estChargement, erreur, effacerErreur } = useAuthStore();
+  const { inscription, erreur, effacerErreur } = useAuthStore();
+  const [chargement, setChargement] = useState(false);
 
   const [formulaire, setFormulaire] = useState({
     name: '',
@@ -25,13 +26,16 @@ export const Inscription: React.FC = () => {
   const soumettre = async (e: React.FormEvent) => {
     e.preventDefault();
     effacerErreur();
+    setChargement(true);
 
     try {
       await inscription(formulaire);
       // Redirection immédiate vers le sas d'attente
       navigate('/compte-inactif');
     } catch {
-      // Géré par le store
+      // Erreur gérée par le store
+    } finally {
+      setChargement(false);
     }
   };
 
@@ -108,7 +112,7 @@ export const Inscription: React.FC = () => {
         <Bouton
           type="submit"
           variante="primaire"
-          chargement={estChargement}
+          chargement={chargement}
           className="w-full justify-center mt-2"
           icone={<UserPlus className="w-4 h-4 mr-1" />}
         >

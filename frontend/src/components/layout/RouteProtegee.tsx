@@ -4,14 +4,16 @@ import { useAuthStore } from '../../stores/authStore';
 import { Loader2 } from 'lucide-react';
 
 export const RouteProtegee: React.FC = () => {
-  const { estConnecte, estActif, estChargement, initialiser } = useAuthStore();
+  const { estConnecte, estActif, sessionVerifiee, estChargement, initialiser } = useAuthStore();
   const location = useLocation();
 
   useEffect(() => {
-    initialiser();
-  }, [initialiser]);
+    if (!sessionVerifiee) {
+      initialiser();
+    }
+  }, [sessionVerifiee, initialiser]);
 
-  if (estChargement) {
+  if (!sessionVerifiee || estChargement) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-sombre-fond text-slate-800 dark:text-sombre-texte">
         <Loader2 className="w-10 h-10 animate-spin text-primaire-600 mb-3" />

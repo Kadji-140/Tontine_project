@@ -8,6 +8,7 @@ interface EtatAuth {
   estActif: boolean;
   estBureau: boolean;
   estChargement: boolean;
+  sessionVerifiee: boolean;
   erreur: string | null;
 
   // Actions
@@ -24,10 +25,12 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
   estConnecte: false,
   estActif: false,
   estBureau: false,
-  estChargement: true,
+  estChargement: false,
+  sessionVerifiee: false,
   erreur: null,
 
   initialiser: async () => {
+    if (get().sessionVerifiee) return;
     set({ estChargement: true, erreur: null });
     try {
       const reponse = await api.get<{ succes: boolean; utilisateur: Utilisateur; est_actif: boolean; est_bureau: boolean }>('/utilisateur');
@@ -39,6 +42,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
           estActif: Boolean(u.is_active),
           estBureau: ['admin', 'tresorier'].includes(u.role),
           estChargement: false,
+          sessionVerifiee: true,
         });
         return;
       }
@@ -51,6 +55,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
       estActif: false,
       estBureau: false,
       estChargement: false,
+      sessionVerifiee: true,
     });
   },
 
@@ -77,6 +82,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
         estActif: Boolean(u.is_active),
         estBureau: ['admin', 'tresorier'].includes(u.role),
         estChargement: false,
+        sessionVerifiee: true,
       });
 
       return u;
@@ -110,6 +116,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
         estActif: Boolean(u.is_active),
         estBureau: ['admin', 'tresorier'].includes(u.role),
         estChargement: false,
+        sessionVerifiee: true,
       });
 
       return u;
@@ -133,6 +140,7 @@ export const useAuthStore = create<EtatAuth>((set, get) => ({
         estActif: false,
         estBureau: false,
         estChargement: false,
+        sessionVerifiee: true,
       });
     }
   },

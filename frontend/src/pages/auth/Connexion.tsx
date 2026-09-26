@@ -9,15 +9,24 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 export const Connexion: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { connexion, estChargement, erreur, effacerErreur } = useAuthStore();
+  const { connexion, estConnecte, estActif, erreur, effacerErreur } = useAuthStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [remember, setRemember] = useState(false);
+  const [chargement, setChargement] = useState(false);
+
+  // Si l'utilisateur est déjà connecté, le rediriger
+  React.useEffect(() => {
+    if (estConnecte) {
+      navigate(estActif ? '/tableau-de-bord' : '/compte-inactif', { replace: true });
+    }
+  }, [estConnecte, estActif, navigate]);
 
   const soumettre = async (e: React.FormEvent) => {
     e.preventDefault();
     effacerErreur();
+    setChargement(true);
 
     try {
       const user = await connexion({ email, password, remember });
@@ -28,7 +37,9 @@ export const Connexion: React.FC = () => {
         navigate(destination, { replace: true });
       }
     } catch {
-      // Géré par le store
+      // Erreur affichée via le store
+    } finally {
+      setChargement(false);
     }
   };
 
@@ -87,7 +98,7 @@ export const Connexion: React.FC = () => {
         <Bouton
           type="submit"
           variante="primaire"
-          chargement={estChargement}
+          chargement={chargement}
           className="w-full justify-center"
           icone={<ArrowRight className="w-4 h-4 ml-1" />}
         >
