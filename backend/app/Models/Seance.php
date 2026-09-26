@@ -5,11 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\AppartientAuTenant;
+
 class Seance extends Model
 {
-    use HasFactory;
+    use HasFactory, AppartientAuTenant;
 
     protected $fillable = [
+        'tenant_id',
         'cycle_id',
         'date_seance',
         'statut',        // ouverte, fermee

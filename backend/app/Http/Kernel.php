@@ -43,6 +43,7 @@ class Kernel extends HttpKernel
             \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
             \Illuminate\Routing\Middleware\ThrottleRequests::class.':api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
+            \App\Http\Middleware\IdentifierTenant::class,
             \App\Http\Middleware\EnsureUserIsActive::class,
         ],
     ];
@@ -70,5 +71,6 @@ class Kernel extends HttpKernel
         'is_tresorier' => \App\Http\Middleware\IsTresorier::class,
         'role.bureau' => \App\Http\Middleware\VerifierRoleBureau::class,
         'force.json' => \App\Http\Middleware\ForceJsonResponse::class,
+        'tenant' => \App\Http\Middleware\IdentifierTenant::class,
     ];
 }

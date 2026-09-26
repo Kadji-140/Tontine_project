@@ -1,0 +1,55 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --couleur-fond: #f8fafc;
+    --couleur-texte: #0f172a;
+  }
+
+  .dark {
+    --couleur-fond: #090d16;
+    --couleur-texte: #f1f5f9;
+  }
+
+  body {
+    background-color: var(--couleur-fond);
+    color: var(--couleur-texte);
+  }
+}
+
+/* Transitions douces lors du changement de thème */
+html.dark *,
+html:not(.dark) * {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Personnalisation de la barre de défilement */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

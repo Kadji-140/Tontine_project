@@ -5,11 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+use App\Traits\AppartientAuTenant;
+
 class Cycle extends Model
 {
-    use HasFactory;
+    use HasFactory, AppartientAuTenant;
 
     protected $fillable = [
+        'tenant_id',
         'nom',
         'date_debut',
         'date_fin',

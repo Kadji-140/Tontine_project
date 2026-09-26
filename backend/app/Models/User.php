@@ -19,12 +19,12 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var array<int, string>
      */
     protected $fillable = [
+        'tenant_id',
         'name',
         'email',
         'phone',
         'password',
         'role',     // admin, tresorier, membre
-        'phone',
         'status',   // actif, suspendu
         'avatar',
         'profession',
@@ -71,5 +71,11 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->belongsToMany(Cycle::class, 'cycle_user')
                     ->withPivot('rang')
                     ->withTimestamps();
+    }
+
+    // Organisation / Tontine SaaS à laquelle appartient ce membre
+    public function tenant()
+    {
+        return $this->belongsTo(Tenant::class, 'tenant_id');
     }
 }

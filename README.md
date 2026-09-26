@@ -1,66 +1,115 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🪙 TontinePro - Plateforme SaaS Collaborative de Gestion de Tontines
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Bienvenue sur le projet **TontinePro**, une solution moderne, sécurisée et évolutive conçue pour digitaliser et simplifier la gestion collaborative des tontines, associations d'épargne rotative et cercles financiers.
 
-## About Laravel
+---
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+## 🏛️ Architecture du Projet
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+Le projet a été restructuré en une architecture complètement découplée :
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+```
+Tontine_project/
+├── backend/                  # API REST Laravel 10 + PostgreSQL + Laravel Sanctum
+│   ├── app/
+│   │   ├── Http/Controllers/Api/  # Contrôleurs REST purs (JSON)
+│   │   ├── Http/Middleware/       # Sécurité, Rôles, Multi-Tenant, Sanctum
+│   │   ├── Models/                # Modèles Eloquent métier & Tenant
+│   │   └── Traits/                # Trait AppartientAuTenant (Scoping Global)
+│   ├── config/                    # CORS (credentials activés), Sanctum stateful
+│   ├── database/migrations/       # Schéma PostgreSQL (avec isolation Multi-Tenant)
+│   └── routes/api.php             # 64 routes REST documentées
+│
+└── frontend/                 # Single Page Application (SPA) React 18
+    ├── src/
+    │   ├── components/            # Composants UI modernes (Bouton, Carte, SelecteurTheme...)
+    │   ├── contexts/              # Thème (Clair, Sombre, Système sans flash)
+    │   ├── lib/                   # Client HTTP Axios + interceptor CSRF Sanctum
+    │   ├── pages/                 # Écrans fonctionnels (Dashboard, Prêts, Séances, Membres...)
+    │   ├── stores/                # Gestion d'état Zustand (Auth, Session, Rôles)
+    │   ├── types/                 # Définitions TypeScript complètes en français
+    │   ├── App.tsx                # Configuration du routage sécurisé
+    │   └── main.tsx               # Point d'entrée React 18
+    ├── vite.config.ts             # Configuration Vite + Plugin PWA
+    └── tailwind.config.js         # Configuration Tailwind CSS + Dark Mode (classe 'dark')
+```
 
-## Learning Laravel
+---
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+## 🚀 Démarrage Rapide
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+### 1. Prérequis
+- **PHP 8.2+** avec extensions `pdo_pgsql`, `pgsql`
+- **PostgreSQL 14+** (ex: base `tontine_project`, port `5432`)
+- **Node.js 18+** et **npm**
+- **Composer 2+**
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+---
 
-## Laravel Sponsors
+### 2. Démarrage du Backend (Laravel API)
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+```bash
+# Se placer dans le dossier backend
+cd backend
 
-### Premium Partners
+# Vérifier la configuration .env (DB_CONNECTION=pgsql, DB_DATABASE=tontine_project...)
+# Lancer les migrations
+php artisan migrate
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+# Lancer les tests unitaires et fonctionnels
+php artisan test
 
-## Contributing
+# Démarrer le serveur API
+php artisan serve
+# L'API est accessible sur http://127.0.0.1:8000
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+---
 
-## Code of Conduct
+### 3. Démarrage du Frontend (React + Vite SPA)
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+```bash
+# Dans un second terminal, se placer dans le dossier frontend
+cd frontend
 
-## Security Vulnerabilities
+# Installer les dépendances (si ce n'est pas déjà fait)
+npm install
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+# Lancer le serveur de développement Vite
+npm run dev
+# L'application est accessible sur http://localhost:5173
+```
 
-## License
+---
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+## 💼 Comptes Démo de Test
+
+Après exécution des seeders (`php artisan db:seed` dans `backend/`), vous pouvez tester les rôles suivants (Mot de passe universel : `password`) :
+
+| Rôle | Email | Droits & Accès |
+|---|---|---|
+| **Administrateur** | `admin@tontine.test` | Gestion globale, approbation des membres, cycles, séances, dépenses |
+| **Trésorier** | `tresorier@tontine.test` | Enregistrement cotisations, validation prêts, gestion de la caisse |
+| **Membre Actif** | `membre@tontine.test` | Demande de prêt, consultation épargne, historique des gains |
+| **Compte Inactif** | `nouveau@tontine.test` | Redirigé automatiquement vers le **Sas d'attente** (`/compte-inactif`) |
+
+---
+
+## ✨ Fonctionnalités Clés
+
+1. **Règles Métier Intactes** :
+   - Déduction automatique du **Mange-Mille** lors de la première cotisation d'un cycle.
+   - Ajustement automatique de l'échéance des prêts à **3 mois max** ou à la date de fin du cycle.
+   - Répartition dynamique des intérêts bancaires au prorata des épargnes à la clôture.
+   - Sas d'attente (`/compte-inactif`) pour les comptes nouvellement inscrits non encore validés.
+
+2. **Interface Moderne & Évolutive** :
+   - **Mode Sombre / Clair / Système** ultra-fluide avec persistance `localStorage` et zéro flash au chargement.
+   - Graphiques financiers interactifs (Recharts).
+   - Support **Progressive Web App (PWA)** avec service worker préconfiguré (`vite-plugin-pwa`).
+   - 100% typé TypeScript en français pour une maintenabilité optimale.
+
+3. **Fondations SaaS Multi-Tenant** :
+   - Table `tenants` avec slug unique (sous-domaines ou en-tête `X-Tenant-Slug`).
+   - Trait Eloquent `AppartientAuTenant` avec injection transparente du Global Scope.
+   - Middleware `IdentifierTenant` garantissant l'étanchéité des données entre organisations.
