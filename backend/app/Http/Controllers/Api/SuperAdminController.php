@@ -234,11 +234,25 @@ class SuperAdminController extends Controller
             $query->where('role', $request->string('role'));
         }
 
+        if ($request->filled('statut_validation')) {
+            $statut = $request->string('statut_validation');
+            if ($statut === 'valide') {
+                $query->where('is_active', true);
+            } elseif ($statut === 'en_attente') {
+                $query->where('is_active', false);
+            }
+        }
+
+        if ($request->filled('est_super_admin')) {
+            $estSuper = in_array($request->string('est_super_admin'), ['1', 'true', 'oui']);
+            $query->where('est_super_admin', $estSuper);
+        }
+
         if ($request->filled('tenant_id')) {
             $query->where('tenant_id', $request->integer('tenant_id'));
         }
 
-        $utilisateurs = $query->latest()->paginate(20);
+        $utilisateurs = $query->latest()->paginate(25);
 
         return response()->json([
             'succes' => true,

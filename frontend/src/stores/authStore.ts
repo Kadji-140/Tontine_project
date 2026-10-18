@@ -15,7 +15,17 @@ interface EtatAuth {
   // Actions
   initialiser: () => Promise<void>;
   connexion: (identifiants: { email: string; password: string; remember?: boolean }) => Promise<Utilisateur>;
-  inscription: (donnees: { name: string; email: string; phone: string; password: string; password_confirmation: string }) => Promise<Utilisateur>;
+  inscription: (donnees: {
+    name: string;
+    email: string;
+    phone: string;
+    password: string;
+    password_confirmation: string;
+    tenant_id?: number | string;
+    tenant_slug?: string;
+    creer_nouvelle_tontine?: boolean;
+    nom_nouvelle_tontine?: string;
+  }) => Promise<Utilisateur>;
   deconnexion: () => Promise<void>;
   mettreAJourUtilisateur: (utilisateur: Utilisateur) => void;
   effacerErreur: () => void;

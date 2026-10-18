@@ -26,6 +26,7 @@ use Illuminate\Support\Facades\Route;
 // --- AUTHENTIFICATION PUBLIQUE ---
 Route::post('/login', [AuthController::class, 'connexion'])->name('api.login');
 Route::post('/register', [AuthController::class, 'inscription'])->name('api.register');
+Route::get('/tontines-publiques', [AuthController::class, 'tontinesPubliques'])->name('api.tontines.publiques');
 
 // --- ROUTES AUTHENTIFIÉES (Tous membres actifs) ---
 Route::middleware(['auth:sanctum'])->group(function () {

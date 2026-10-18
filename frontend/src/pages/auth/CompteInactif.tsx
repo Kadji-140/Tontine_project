@@ -41,7 +41,7 @@ export const CompteInactif: React.FC = () => {
           <span>Procédure d'admission en cours</span>
         </div>
         <p className="text-[11px] leading-relaxed opacity-90">
-          Un administrateur ou trésorier de votre tontine doit approuver votre dossier d'adhésion avant que vous puissiez consulter le solde, participer aux séances et solliciter des prêts.
+          Un administrateur ou trésorier de votre tontine <strong className="font-bold underline">{utilisateur?.tenant?.nom || 'votre organisation'}</strong> doit approuver votre dossier d'adhésion avant que vous puissiez consulter le solde, participer aux séances et solliciter des prêts.
         </p>
       </div>
 
