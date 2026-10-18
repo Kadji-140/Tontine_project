@@ -3,8 +3,8 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { RouteProtegee } from './components/layout/RouteProtegee';
 import { RouteBureau } from './components/layout/RouteBureau';
 import { RouteSuperAdmin } from './components/layout/RouteSuperAdmin';
-import { LayoutApplication } from './components/layout/LayoutApplication';
 import { LayoutInvite } from './components/layout/LayoutInvite';
+import { LayoutModerne } from './components/layout/LayoutModerne';
 
 // Pages Publiques / Invités
 import { Connexion } from './pages/auth/Connexion';
@@ -13,14 +13,14 @@ import { Inscription } from './pages/auth/Inscription';
 // Page Compte Inactif (Sas d'attente)
 import { CompteInactif } from './pages/auth/CompteInactif';
 
-// Pages Application
+// Pages Application & Espace Membre
 import { TableauDeBord } from './pages/dashboard/TableauDeBord';
 import { ListePrets } from './pages/prets/ListePrets';
 import { HistoriqueGains } from './pages/gains/HistoriqueGains';
 import { ListeCycles } from './pages/cycles/ListeCycles';
 import { EditerProfil } from './pages/profil/EditerProfil';
 
-// Pages Gestion Bureau
+// Pages Gestion Bureau (Admin & Trésorier)
 import { ListeSeances } from './pages/seances/ListeSeances';
 import { DetailSeance } from './pages/seances/DetailSeance';
 import { ListeSanctions } from './pages/sanctions/ListeSanctions';
@@ -34,27 +34,27 @@ import { ListeUtilisateursGlobal } from './pages/superadmin/ListeUtilisateursGlo
 export const App: React.FC = () => {
   return (
     <Routes>
-      {/* Routes Publiques (Invité) */}
+      {/* 1. Routes Publiques (Invité) */}
       <Route element={<LayoutInvite />}>
         <Route path="/connexion" element={<Connexion />} />
         <Route path="/inscription" element={<Inscription />} />
       </Route>
 
-      {/* Routes Protégées (Authentification requise) */}
+      {/* 2. Routes Protégées (Authentification requise) */}
       <Route element={<RouteProtegee />}>
-        {/* Sas d'attente pour comptes inactifs */}
+        {/* Sas d'attente pour comptes en cours de validation */}
         <Route path="/compte-inactif" element={<CompteInactif />} />
 
-        {/* Espace Connecté Principal */}
-        <Route element={<LayoutApplication />}>
-          {/* Espace Membre */}
+        {/* Environnement Principal Unifié (Design Moderne Épuré Dribbble) */}
+        <Route element={<LayoutModerne />}>
+          {/* Espace Membre (Accessible à tous les membres connectés et actifs) */}
           <Route path="/tableau-de-bord" element={<TableauDeBord />} />
           <Route path="/prets" element={<ListePrets />} />
           <Route path="/mes-gains" element={<HistoriqueGains />} />
           <Route path="/cycles" element={<ListeCycles />} />
           <Route path="/profil" element={<EditerProfil />} />
 
-          {/* Espace Bureau (Admin & Trésorier) */}
+          {/* Espace Bureau (Admin Président & Trésorier) */}
           <Route element={<RouteBureau />}>
             <Route path="/seances" element={<ListeSeances />} />
             <Route path="/seances/:id" element={<DetailSeance />} />
@@ -69,9 +69,21 @@ export const App: React.FC = () => {
             <Route path="/super-admin/utilisateurs" element={<ListeUtilisateursGlobal />} />
           </Route>
         </Route>
+
+        {/* Redirections de compatibilité pour les anciennes routes de transition "/moderne" */}
+        <Route path="/moderne" element={<Navigate to="/tableau-de-bord" replace />} />
+        <Route path="/moderne/seances" element={<Navigate to="/seances" replace />} />
+        <Route path="/moderne/seances/:id" element={<Navigate to="/seances/:id" replace />} />
+        <Route path="/moderne/prets" element={<Navigate to="/prets" replace />} />
+        <Route path="/moderne/cycles" element={<Navigate to="/cycles" replace />} />
+        <Route path="/moderne/mes-gains" element={<Navigate to="/mes-gains" replace />} />
+        <Route path="/moderne/utilisateurs" element={<Navigate to="/utilisateurs" replace />} />
+        <Route path="/moderne/sanctions" element={<Navigate to="/sanctions" replace />} />
+        <Route path="/moderne/profil" element={<Navigate to="/profil" replace />} />
+        <Route path="/nouveau-tableau-de-bord" element={<Navigate to="/tableau-de-bord" replace />} />
       </Route>
 
-      {/* Redirection par défaut */}
+      {/* Redirection par défaut vers le tableau de bord */}
       <Route path="*" element={<Navigate to="/tableau-de-bord" replace />} />
     </Routes>
   );

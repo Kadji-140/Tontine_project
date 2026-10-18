@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useLocation } from 'react-router-dom';
 import { Carte, EnteteCarte, TitreCarte, SousTitreCarte } from '../../components/ui/Carte';
 import { Bouton } from '../../components/ui/Bouton';
 import { Badge } from '../../components/ui/Badge';
@@ -27,6 +27,8 @@ import {
 export const DetailSeance: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { estBureau, utilisateur } = useAuthStore();
+  const location = useLocation();
+  const lienRetour = location.pathname.startsWith('/moderne') ? '/moderne/seances' : '/seances';
 
   const [seance, setSeance] = useState<Seance | null>(null);
   const [beneficiaireAttendu, setBeneficiaireAttendu] = useState<Utilisateur | null>(null);
@@ -180,7 +182,7 @@ export const DetailSeance: React.FC = () => {
       {/* Navigation et En-tête */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <Link to="/seances">
+          <Link to={lienRetour}>
             <Bouton variante="contour" taille="sm" icone={<ArrowLeft className="w-4 h-4" />}>
               Retour
             </Bouton>
@@ -408,7 +410,7 @@ export const DetailSeance: React.FC = () => {
                         {c.type}
                       </Badge>
                     </td>
-                    <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white">
+                    <td className="py-3 px-3 text-right font-bold text-slate-900 dark:text-white tabular-nums">
                       {formaterMontant(c.montant)}
                     </td>
                     <td className="py-3 px-3 text-right text-slate-400">

@@ -17,6 +17,7 @@ import {
   Building2,
   Globe,
   Crown,
+  Sparkles,
   X
 } from 'lucide-react';
 

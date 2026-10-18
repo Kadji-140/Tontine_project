@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Carte, EnteteCarte, TitreCarte, SousTitreCarte } from '../../components/ui/Carte';
 import { Bouton } from '../../components/ui/Bouton';
 import { Badge } from '../../components/ui/Badge';
 import { ChampTexte } from '../../components/ui/ChampTexte';
 import { Alerte } from '../../components/ui/Alerte';
+import { BarreFiltresTableau } from '../../components/ui/BarreFiltresTableau';
+import { SqueletteCarteGraphique } from '../../components/ui/SqueletteChargement';
 import api from '../../lib/api';
 import { Cycle } from '../../types';
 import { formaterDate, formaterMontant } from '../../lib/utils';
@@ -17,6 +19,10 @@ export const ListeCycles: React.FC = () => {
   const [modalOuvert, setModalOuvert] = useState(false);
   const [modalMembres, setModalMembres] = useState<Cycle | null>(null);
   const [message, setMessage] = useState<{ type: 'succes' | 'danger'; texte: string } | null>(null);
+
+  // Filtres et recherche
+  const [recherche, setRecherche] = useState('');
+  const [filtreStatut, setFiltreStatut] = useState<'tous' | 'actif' | 'inactif'>('tous');
 
   // Formulaire nouveau cycle
   const [form, setForm] = useState({
@@ -90,6 +96,30 @@ export const ListeCycles: React.FC = () => {
     }
   };
 
+  // Options des filtres de statut
+  const optionsFiltres = [
+    { cle: 'tous', label: 'Tous les cycles' },
+    { cle: 'actif', label: 'Actifs' },
+    { cle: 'inactif', label: 'Clôturés' },
+  ];
+
+  // Filtrage combiné recherche texte + filtre statut
+  const cyclesFiltres = useMemo(() => {
+    return cycles.filter((c) => {
+      const correspondRecherche =
+        !recherche ||
+        c.nom.toLowerCase().includes(recherche.toLowerCase()) ||
+        c.frequence_paiement.toLowerCase().includes(recherche.toLowerCase());
+
+      const correspondStatut =
+        filtreStatut === 'tous' ||
+        (filtreStatut === 'actif' && c.est_actif) ||
+        (filtreStatut === 'inactif' && !c.est_actif);
+
+      return correspondRecherche && correspondStatut;
+    });
+  }, [cycles, recherche, filtreStatut]);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -118,6 +148,18 @@ export const ListeCycles: React.FC = () => {
           {message.texte}
         </Alerte>
       )}
+
+      {/* Barre universelle de recherche et filtres */}
+      <BarreFiltresTableau
+        termeRecherche={recherche}
+        surChangementRecherche={setRecherche}
+        placeholder="Rechercher par nom de cycle, fréquence..."
+        optionsFiltres={optionsFiltres}
+        filtreActif={filtreStatut}
+        surChangementFiltre={(cle) => setFiltreStatut(cle as any)}
+        totalResultats={cyclesFiltres.length}
+        libelleResultats="cycle(s) listé(s)"
+      />
 
       {/* Modal de création de cycle */}
       {modalOuvert && (
@@ -211,69 +253,110 @@ export const ListeCycles: React.FC = () => {
         </div>
       )}
 
-      {/* Grille des cycles */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {cycles.map((cycle) => (
-          <Carte key={cycle.id} surbrillance={cycle.est_actif} className="space-y-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-bold text-base text-slate-900 dark:text-white">{cycle.nom}</h3>
+      {/* Grille des cycles ou état de chargement */}
+      {chargement ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3].map((n) => (
+            <div
+              key={n}
+              className="bg-white dark:bg-sombre-surface rounded-2xl p-6 border border-slate-200/80 dark:border-sombre-bordure shadow-xs space-y-4 animate-pulse"
+            >
+              <div className="flex justify-between items-start">
+                <div className="space-y-2">
+                  <div className="h-5 w-32 bg-slate-200 dark:bg-sombre-bordure rounded" />
+                  <div className="h-3 w-44 bg-slate-100 dark:bg-sombre-carte rounded" />
                 </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                  Du {formaterDate(cycle.date_debut)} au {formaterDate(cycle.date_fin)}
-                </p>
+                <div className="h-5 w-16 bg-slate-200 dark:bg-sombre-bordure rounded-full" />
               </div>
-              <Badge variante={cycle.est_actif ? 'succes' : 'neutre'}>
-                {cycle.est_actif ? 'Actif' : 'Clôturé / Inactif'}
-              </Badge>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 dark:border-sombre-bordure text-xs">
-              <div>
-                <span className="text-slate-400 block text-[11px]">Montant Part</span>
-                <span className="font-bold text-slate-900 dark:text-white">{formaterMontant(cycle.montant_part)}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Mange-Mille</span>
-                <span className="font-bold text-slate-900 dark:text-white">{formaterMontant(cycle.montant_mange_mille)}</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Taux Prêt</span>
-                <span className="font-bold text-slate-900 dark:text-white">{cycle.taux_interet}%</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block text-[11px]">Fréquence</span>
-                <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize">{cycle.frequence_paiement}</span>
+              <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 dark:border-sombre-bordure">
+                <div className="h-8 bg-slate-100 dark:bg-sombre-carte rounded" />
+                <div className="h-8 bg-slate-100 dark:bg-sombre-carte rounded" />
               </div>
             </div>
+          ))}
+        </div>
+      ) : cyclesFiltres.length === 0 ? (
+        <div className="bg-white dark:bg-sombre-surface rounded-2xl p-12 text-center border border-slate-200/80 dark:border-sombre-bordure shadow-xs">
+          <Repeat className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+            Aucun cycle correspondant trouvé
+          </p>
+          <p className="text-xs text-slate-400 mt-1">
+            Modifiez vos filtres ou termes de recherche pour afficher les résultats.
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cyclesFiltres.map((cycle) => (
+            <Carte key={cycle.id} surbrillance={cycle.est_actif} className="space-y-4">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-base text-slate-900 dark:text-white">{cycle.nom}</h3>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                    Du {formaterDate(cycle.date_debut)} au {formaterDate(cycle.date_fin)}
+                  </p>
+                </div>
+                <Badge variante={cycle.est_actif ? 'succes' : 'neutre'}>
+                  {cycle.est_actif ? 'Actif' : 'Clôturé / Inactif'}
+                </Badge>
+              </div>
 
-            <div className="flex items-center justify-between pt-1 gap-2">
-              {estBureau && !cycle.est_actif && (
-                <Bouton
-                  variante="contour"
-                  taille="sm"
-                  onClick={() => activerCycle(cycle.id)}
-                  icone={<CheckCircle className="w-3.5 h-3.5 mr-1" />}
-                >
-                  Activer
-                </Bouton>
-              )}
+              <div className="grid grid-cols-2 gap-3 py-3 border-y border-slate-100 dark:border-sombre-bordure text-xs">
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Montant Part</span>
+                  <span className="font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                    {formaterMontant(cycle.montant_part)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Mange-Mille</span>
+                  <span className="font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                    {formaterMontant(cycle.montant_mange_mille)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Taux Prêt</span>
+                  <span className="font-bold text-slate-900 dark:text-white tabular-nums tracking-tight">
+                    {cycle.taux_interet}%
+                  </span>
+                </div>
+                <div>
+                  <span className="text-slate-400 block text-[11px]">Fréquence</span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 capitalize">
+                    {cycle.frequence_paiement}
+                  </span>
+                </div>
+              </div>
 
-              {estBureau && (
-                <Bouton
-                  variante="contour"
-                  taille="sm"
-                  onClick={() => melangerOrdre(cycle.id)}
-                  icone={<Shuffle className="w-3.5 h-3.5 mr-1" />}
-                >
-                  Tirage Sort
-                </Bouton>
-              )}
-            </div>
-          </Carte>
-        ))}
-      </div>
+              <div className="flex items-center justify-between pt-1 gap-2">
+                {estBureau && !cycle.est_actif && (
+                  <Bouton
+                    variante="contour"
+                    taille="sm"
+                    onClick={() => activerCycle(cycle.id)}
+                    icone={<CheckCircle className="w-3.5 h-3.5 mr-1" />}
+                  >
+                    Activer
+                  </Bouton>
+                )}
+
+                {estBureau && (
+                  <Bouton
+                    variante="contour"
+                    taille="sm"
+                    onClick={() => melangerOrdre(cycle.id)}
+                    icone={<Shuffle className="w-3.5 h-3.5 mr-1" />}
+                  >
+                    Tirage Sort
+                  </Bouton>
+                )}
+              </div>
+            </Carte>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
