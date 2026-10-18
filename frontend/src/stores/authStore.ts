@@ -25,6 +25,7 @@ interface EtatAuth {
     tenant_slug?: string;
     creer_nouvelle_tontine?: boolean;
     nom_nouvelle_tontine?: string;
+    invitation_token?: string;
   }) => Promise<Utilisateur>;
   deconnexion: () => Promise<void>;
   mettreAJourUtilisateur: (utilisateur: Utilisateur) => void;

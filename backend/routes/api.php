@@ -15,6 +15,7 @@ use App\Http\Controllers\Api\SanctionApiController;
 use App\Http\Controllers\Api\SeanceApiController;
 use App\Http\Controllers\Api\UtilisateurApiController;
 use App\Http\Controllers\Api\SuperAdminController;
+use App\Http\Controllers\Api\InvitationApiController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -27,6 +28,7 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'connexion'])->name('api.login');
 Route::post('/register', [AuthController::class, 'inscription'])->name('api.register');
 Route::get('/tontines-publiques', [AuthController::class, 'tontinesPubliques'])->name('api.tontines.publiques');
+Route::get('/invitations/verifier/{token}', [InvitationApiController::class, 'verifierPublic'])->name('api.invitations.verifier');
 
 // --- ROUTES AUTHENTIFIÉES (Tous membres actifs) ---
 Route::middleware(['auth:sanctum'])->group(function () {
@@ -131,10 +133,16 @@ Route::middleware(['auth:sanctum'])->group(function () {
 
         // Utilisateurs
         Route::get('/utilisateurs', [UtilisateurApiController::class, 'index'])->name('api.users.index');
+        Route::post('/utilisateurs/creer-membre', [UtilisateurApiController::class, 'creerMembre'])->name('api.users.creer');
         Route::patch('/utilisateurs/{id}/toggle', [UtilisateurApiController::class, 'basculerStatut'])->name('api.users.toggle');
         Route::get('/utilisateurs/{id}/stats-prets', [UtilisateurApiController::class, 'statsPrets'])->name('api.users.stats');
         Route::get('/utilisateurs/{id}/details', [UtilisateurApiController::class, 'details'])->name('api.users.details');
         Route::delete('/utilisateurs/{id}', [UtilisateurApiController::class, 'destroy'])->name('api.users.destroy');
+
+        // Invitations Sécurisées (Zone Bureau)
+        Route::get('/invitations', [InvitationApiController::class, 'index'])->name('api.invitations.index');
+        Route::post('/invitations', [InvitationApiController::class, 'generer'])->name('api.invitations.generer');
+        Route::delete('/invitations/{id}', [InvitationApiController::class, 'revoquer'])->name('api.invitations.revoquer');
     });
 
     // =========================================================================

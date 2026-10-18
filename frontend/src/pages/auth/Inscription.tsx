@@ -4,68 +4,83 @@ import { useAuthStore } from '../../stores/authStore';
 import { ChampTexte } from '../../components/ui/ChampTexte';
 import { Bouton } from '../../components/ui/Bouton';
 import { Alerte } from '../../components/ui/Alerte';
-import { User, Mail, Phone, Lock, UserPlus, Building2, Sparkles, CheckCircle2 } from 'lucide-react';
+import { 
+  User, 
+  Mail, 
+  Phone, 
+  Lock, 
+  UserPlus, 
+  Building2, 
+  ShieldCheck, 
+  AlertTriangle,
+  Sparkles,
+  CheckCircle2,
+  Clock
+} from 'lucide-react';
 import api from '../../lib/api';
 
-interface TontinePublique {
-  id: number;
-  nom: string;
-  slug: string;
-  devise: string;
+interface InfosInvitation {
+  valide: boolean;
+  tontine: {
+    nom: string;
+    slug: string;
+    devise: string;
+  };
+  role: string;
+  email_restreint?: string | null;
+  expire_le: string;
 }
 
 export const Inscription: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { inscription, erreur, effacerErreur } = useAuthStore();
+  
+  const tokenInvitation = searchParams.get('invitation');
+  const [chargementInvitation, setChargementInvitation] = useState(Boolean(tokenInvitation));
+  const [infosInvitation, setInfosInvitation] = useState<InfosInvitation | null>(null);
+  const [erreurInvitation, setErreurInvitation] = useState<string | null>(null);
+
   const [chargement, setChargement] = useState(false);
-
-  // Liste des tontines disponibles pour l'adhésion
-  const [tontines, setTontines] = useState<TontinePublique[]>([]);
-  const [modeInscription, setModeInscription] = useState<'rejoindre' | 'creer'>('rejoindre');
-
   const [formulaire, setFormulaire] = useState({
     name: '',
     email: '',
     phone: '',
     password: '',
     password_confirmation: '',
-    tenant_id: '',
-    tenant_slug: '',
     nom_nouvelle_tontine: '',
   });
 
+  // 1. Vérification du token d'invitation si présent dans l'URL
   useEffect(() => {
-    const chargerTontines = async () => {
+    if (!tokenInvitation) {
+      setChargementInvitation(false);
+      return;
+    }
+
+    const verifierToken = async () => {
+      setChargementInvitation(true);
+      setErreurInvitation(null);
       try {
-        const res = await api.get<{ succes: boolean; tontines: TontinePublique[] }>('/tontines-publiques');
-        if (res.data.succes && res.data.tontines.length > 0) {
-          setTontines(res.data.tontines);
-
-          // Si un slug de tontine est passé dans l'URL (?tontine=slug)
-          const slugUrl = searchParams.get('tontine');
-          if (slugUrl) {
-            const trouve = res.data.tontines.find((t) => t.slug === slugUrl);
-            if (trouve) {
-              setFormulaire((prev) => ({ ...prev, tenant_id: String(trouve.id), tenant_slug: trouve.slug }));
-              return;
-            }
+        const rep = await api.get<{ succes: boolean } & InfosInvitation>(`/invitations/verifier/${tokenInvitation}`);
+        if (rep.data.succes && rep.data.valide) {
+          setInfosInvitation(rep.data);
+          if (rep.data.email_restreint) {
+            setFormulaire((prev) => ({ ...prev, email: rep.data.email_restreint! }));
           }
-
-          // Par défaut, première tontine
-          setFormulaire((prev) => ({
-            ...prev,
-            tenant_id: String(res.data.tontines[0].id),
-            tenant_slug: res.data.tontines[0].slug,
-          }));
         }
-      } catch {
-        // Ignorer en mode hors ligne
+      } catch (err: any) {
+        setErreurInvitation(
+          err.response?.data?.message ||
+          "Ce lien d'invitation est invalide, a déjà été utilisé ou a expiré."
+        );
+      } finally {
+        setChargementInvitation(false);
       }
     };
 
-    chargerTontines();
-  }, [searchParams]);
+    verifierToken();
+  }, [tokenInvitation]);
 
   const handleChange = (champ: string, valeur: string) => {
     setFormulaire((prev) => ({ ...prev, [champ]: valeur }));
@@ -85,40 +100,101 @@ export const Inscription: React.FC = () => {
         password_confirmation: formulaire.password_confirmation,
       };
 
-      if (modeInscription === 'creer') {
+      if (tokenInvitation && infosInvitation) {
+        // Mode Adhésion Sécurisée par Invitation
+        payload.invitation_token = tokenInvitation;
+      } else {
+        // Mode Création Fondateur SaaS
         payload.creer_nouvelle_tontine = true;
         payload.nom_nouvelle_tontine = formulaire.nom_nouvelle_tontine;
-      } else {
-        if (formulaire.tenant_id) payload.tenant_id = Number(formulaire.tenant_id);
-        if (formulaire.tenant_slug) payload.tenant_slug = formulaire.tenant_slug;
       }
 
       const user = await inscription(payload);
 
-      // Si c'est un créateur de tontine -> Actif immédiatement -> Tableau de bord
-      // Si c'est un membre rejoignant une tontine -> Sas d'attente d'approbation
       if (user.is_active) {
         navigate('/tableau-de-bord');
       } else {
         navigate('/compte-inactif');
       }
     } catch {
-      // Erreur gérée par le store
+      // Erreur gérée dans le store
     } finally {
       setChargement(false);
     }
   };
 
+  if (chargementInvitation) {
+    return (
+      <div className="py-12 text-center space-y-3">
+        <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto" />
+        <p className="text-xs text-slate-500">Vérification de l'invitation sécurisée...</p>
+      </div>
+    );
+  }
+
+  // Si le token dans l'URL est invalide ou corrompu
+  if (tokenInvitation && erreurInvitation) {
+    return (
+      <div className="space-y-6 text-center">
+        <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center">
+          <AlertTriangle className="w-8 h-8" />
+        </div>
+        <div className="space-y-2">
+          <h3 className="text-lg font-bold text-slate-900 dark:text-white">Lien d'invitation non valide</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto leading-relaxed">
+            {erreurInvitation}
+          </p>
+        </div>
+        <div className="p-4 rounded-xl bg-slate-50 dark:bg-sombre-surface text-xs text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-sombre-bordure text-left">
+          <p className="font-semibold mb-1">Que pouvez-vous faire ?</p>
+          <ul className="list-disc list-inside space-y-1 text-[11px]">
+            <li>Demandez à l'administrateur de votre tontine de générer un nouveau lien d'invitation.</li>
+            <li>Si vous êtes président et souhaitez créer votre propre tontine,{' '}
+              <Link to="/inscription" className="text-blue-600 font-bold hover:underline">
+                cliquez ici
+              </Link>.
+            </li>
+          </ul>
+        </div>
+        <div>
+          <Link to="/connexion">
+            <Bouton variante="secondaire" taille="sm">Retour à la connexion</Bouton>
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Inscription & Adhésion</h3>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          {modeInscription === 'rejoindre'
-            ? 'Rejoignez votre tontine pour suivre vos cotisations et vos prêts'
-            : 'Créez votre propre organisation tontinière en quelques secondes'}
-        </p>
-      </div>
+      {/* En-tête conditionnel selon le mode */}
+      {infosInvitation ? (
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/60">
+            <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+            <span>Invitation Officielle Vérifiée</span>
+          </div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+            Rejoindre {infosInvitation.tontine.nom}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Vous avez été invité(e) par le bureau à rejoindre cette organisation. Complétez vos informations pour finaliser votre accès.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-blue-50 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-900/60 mb-2">
+            <Sparkles className="w-3 h-3 text-blue-600" />
+            Nouveau Cycle SaaS
+          </div>
+          <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+            Créer votre Tontine
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Ouvrez votre organisation tontinière en ligne, créez vos cycles d'épargne et invitez vos membres en 1 clic.
+          </p>
+        </div>
+      )}
 
       {erreur && (
         <Alerte variante="danger" titre="Erreur lors de l'enregistrement">
@@ -126,69 +202,10 @@ export const Inscription: React.FC = () => {
         </Alerte>
       )}
 
-      {/* Onglets de choix : Rejoindre une tontine OU Créer sa tontine */}
-      <div className="grid grid-cols-2 p-1 bg-slate-100 dark:bg-sombre-surface rounded-xl text-xs font-bold">
-        <button
-          type="button"
-          onClick={() => setModeInscription('rejoindre')}
-          className={`py-2 rounded-lg transition-all ${
-            modeInscription === 'rejoindre'
-              ? 'bg-white dark:bg-sombre-carte text-slate-900 dark:text-white shadow-xs'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          Rejoindre une Tontine
-        </button>
-        <button
-          type="button"
-          onClick={() => setModeInscription('creer')}
-          className={`py-2 rounded-lg transition-all flex items-center justify-center gap-1.5 ${
-            modeInscription === 'creer'
-              ? 'bg-white dark:bg-sombre-carte text-blue-600 dark:text-blue-400 shadow-xs'
-              : 'text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>Créer une Tontine</span>
-        </button>
-      </div>
-
       <form onSubmit={soumettre} className="space-y-3.5">
-        {/* Choix ou création de la Tontine */}
-        {modeInscription === 'rejoindre' ? (
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Sélectionnez votre Tontine
-            </label>
-            <div className="relative">
-              <Building2 className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-              <select
-                value={formulaire.tenant_id}
-                onChange={(e) => {
-                  const id = e.target.value;
-                  const item = tontines.find((t) => String(t.id) === id);
-                  setFormulaire((prev) => ({
-                    ...prev,
-                    tenant_id: id,
-                    tenant_slug: item?.slug || '',
-                  }));
-                }}
-                required
-                className="w-full pl-10 pr-4 py-2.5 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-sombre-bordure bg-white dark:bg-sombre-surface text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {tontines.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.nom} (@{t.slug})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-              Votre dossier d'adhésion sera transmis au bureau de cette tontine pour validation.
-            </p>
-          </div>
-        ) : (
-          <div>
+        {/* Si c'est une création de tontine, demander le nom de l'association */}
+        {!infosInvitation && (
+          <div className="pb-1">
             <ChampTexte
               etiquette="Nom de votre Tontine ou Association"
               type="text"
@@ -196,20 +213,20 @@ export const Inscription: React.FC = () => {
               placeholder="Ex: Tontine Fraternelle de Douala"
               value={formulaire.nom_nouvelle_tontine}
               onChange={(e) => handleChange('nom_nouvelle_tontine', e.target.value)}
-              iconeGauche={<Building2 className="w-4 h-4" />}
+              iconeGauche={<Building2 className="w-4 h-4 text-blue-600" />}
             />
             <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">
-              Vous serez automatiquement configuré comme <strong>Président (Administrateur)</strong> de cette nouvelle tontine.
+              Vous serez automatiquement désigné(e) comme <strong>Président (Administrateur)</strong> de cette tontine.
             </p>
           </div>
         )}
 
-        {/* Coordonnées personnelles */}
+        {/* Informations personnelles */}
         <ChampTexte
           etiquette="Nom complet"
           type="text"
           required
-          placeholder="Ex: Paul Alain Ndongo"
+          placeholder="Ex: Jean Paul Ndongo"
           value={formulaire.name}
           onChange={(e) => handleChange('name', e.target.value)}
           iconeGauche={<User className="w-4 h-4" />}
@@ -219,9 +236,10 @@ export const Inscription: React.FC = () => {
           etiquette="Adresse email"
           type="email"
           required
-          placeholder="paul.ndongo@exemple.cm"
+          placeholder="jean.paul@exemple.cm"
           value={formulaire.email}
           onChange={(e) => handleChange('email', e.target.value)}
+          readOnly={Boolean(infosInvitation?.email_restreint)}
           iconeGauche={<Mail className="w-4 h-4" />}
         />
 
@@ -255,6 +273,13 @@ export const Inscription: React.FC = () => {
           iconeGauche={<Lock className="w-4 h-4" />}
         />
 
+        {!infosInvitation && (
+          <div className="p-3 rounded-xl bg-slate-50 dark:bg-sombre-surface border border-slate-200/70 dark:border-sombre-bordure text-[11px] text-slate-500 dark:text-slate-400">
+            <strong>Vous êtes déjà membre d'une tontine ?</strong><br />
+            Demandez à votre président de vous transmettre votre lien d'invitation personnel ou vos identifiants d'accès.
+          </div>
+        )}
+
         <Bouton
           type="submit"
           variante="primaire"
@@ -262,7 +287,7 @@ export const Inscription: React.FC = () => {
           className="w-full justify-center mt-3"
           icone={<UserPlus className="w-4 h-4 mr-1" />}
         >
-          {modeInscription === 'creer' ? 'Créer ma Tontine & mon Compte' : 'Transmettre mon Adhésion'}
+          {infosInvitation ? 'Rejoindre la Tontine' : 'Créer ma Tontine & Mon Compte'}
         </Bouton>
       </form>
 

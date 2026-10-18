@@ -157,4 +157,56 @@ class UtilisateurApiController extends Controller
             'message' => "Le compte de {$user->name} a été supprimé.",
         ]);
     }
+
+    /**
+     * Ajout direct d'un membre par l'administrateur avec génération d'identifiants provisoires.
+     */
+    public function creerMembre(Request $request): JsonResponse
+    {
+        $valides = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'phone' => ['required', 'string', 'max:20', 'unique:users,phone'],
+            'role' => ['nullable', 'in:admin,tresorier,membre'],
+            'mot_de_passe_personnalise' => ['nullable', 'string', 'min:6'],
+        ]);
+
+        $admin = Auth::user();
+        $tenantId = $admin->tenant_id;
+
+        if (!$tenantId) {
+            return response()->json([
+                'succes' => false,
+                'message' => "Impossible de créer un membre sans organisation tontinière associée.",
+            ], 422);
+        }
+
+        // Si aucun mot de passe n'est spécifié, génération d'un mot de passe temporaire simple et sécurisé
+        $motDePasseBrut = $valides['mot_de_passe_personnalise'] ?? ('Tontine@' . rand(1000, 9999));
+
+        $user = User::create([
+            'tenant_id' => $tenantId,
+            'name' => $valides['name'],
+            'email' => $valides['email'],
+            'phone' => $valides['phone'],
+            'password' => \Illuminate\Support\Facades\Hash::make($motDePasseBrut),
+            'role' => $valides['role'] ?? 'membre',
+            'est_super_admin' => false,
+            'status' => 'actif',
+            'is_active' => true, // Immédiatement actif puisque créé directement par l'administrateur
+            'email_verified_at' => now(),
+        ]);
+
+        return response()->json([
+            'succes' => true,
+            'message' => "Le membre {$user->name} a été ajouté avec succès à votre tontine.",
+            'utilisateur' => $user,
+            'mot_de_passe_temporaire' => $motDePasseBrut,
+            'identifiants' => [
+                'email' => $user->email,
+                'mot_de_passe' => $motDePasseBrut,
+                'tontine' => $admin->tenant?->nom,
+            ],
+        ], 201);
+    }
 }

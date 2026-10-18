@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Tenant;
+use App\Models\Invitation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -83,14 +84,43 @@ class AuthController extends Controller
             'tenant_slug' => ['nullable', 'string'],
             'creer_nouvelle_tontine' => ['nullable', 'boolean'],
             'nom_nouvelle_tontine' => ['nullable', 'string', 'max:255'],
+            'invitation_token' => ['nullable', 'string'],
         ]);
 
         $role = 'membre';
         $estActif = false;
         $tenantId = null;
 
-        if ($request->boolean('creer_nouvelle_tontine') && $request->filled('nom_nouvelle_tontine')) {
-            // Mode Fondateur : Création d'une nouvelle tontine sur la plateforme
+        if ($request->filled('invitation_token')) {
+            // Mode Invitation Sécurisée : Token inviolable de 64 caractères émis par le Bureau
+            $token = $request->string('invitation_token');
+            $invitation = Invitation::withoutGlobalScope('tenant')
+                ->where('token', $token)
+                ->first();
+
+            if (!$invitation || !$invitation->estValide()) {
+                return response()->json([
+                    'succes' => false,
+                    'message' => "Ce lien d'invitation est invalide, a déjà été utilisé ou a expiré.",
+                ], 422);
+            }
+
+            // Si l'invitation était restreinte à une adresse email précise
+            if ($invitation->email && strtolower(trim($invitation->email)) !== strtolower(trim($champsValides['email']))) {
+                return response()->json([
+                    'succes' => false,
+                    'message' => "Ce lien d'invitation est réservé exclusivement à l'adresse {$invitation->email}.",
+                ], 422);
+            }
+
+            $tenantId = $invitation->tenant_id;
+            $role = $invitation->role ?: 'membre';
+            $estActif = true; // L'invitation émanant directement du bureau, le compte est validé
+
+            // Consommer une utilisation de l'invitation
+            $invitation->increment('nb_utilisations');
+        } elseif ($request->boolean('creer_nouvelle_tontine') && $request->filled('nom_nouvelle_tontine')) {
+            // Mode Fondateur : Création d'une nouvelle organisation tontinière sur la plateforme SaaS
             $nomTontine = trim($request->string('nom_nouvelle_tontine'));
             $baseSlug = Str::slug($nomTontine);
             $slug = $baseSlug ?: 'tontine';
@@ -109,18 +139,15 @@ class AuthController extends Controller
             $role = 'admin'; // Le créateur est désigné Président / Admin
             $estActif = true; // Actif immédiatement
         } else {
-            // Mode Adhérent : Rejoindre une tontine existante
+            // Cas par défaut : Rattachement à une tontine active
             if ($request->filled('tenant_id')) {
                 $t = Tenant::where('statut', 'actif')->find($request->integer('tenant_id'));
                 if ($t) $tenantId = $t->id;
             } elseif ($request->filled('tenant_slug')) {
                 $t = Tenant::where('statut', 'actif')->where('slug', $request->string('tenant_slug'))->first();
                 if ($t) $tenantId = $t->id;
-            } elseif (app()->bound('tenant_actuel')) {
-                $tenantId = app('tenant_actuel')?->id;
             }
 
-            // Si aucune tontine n'a été spécifiée, rattacher automatiquement à la première active
             if (!$tenantId) {
                 $premierTenant = Tenant::where('statut', 'actif')->first();
                 $tenantId = $premierTenant?->id;
